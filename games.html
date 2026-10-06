@@ -1,0 +1,586 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>img{max-width:100%}</style></head><body><title>Ігротека Матвієнків</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a shelf of game boxes. Header with the collection name, one control panel ("гра на вечір"), then a dense grid of box-shaped cards. */
+:root{
+  --bg:#e9eef0; --surface:#ffffff; --surface-2:#f4f7f8; --ink:#13262d; --muted:#586c74; --line:#cfd9dd;
+  --accent:#0c6b74; --accent-ink:#ffffff; --gold:#b97a00; --danger:#b3372d;
+  --r4:#1d7a4c; --r3:#2f6f9f; --r2:#7a6a9c; --r1:#8a5a52;
+  --shadow:0 1px 2px rgba(19,38,45,.08),0 6px 18px rgba(19,38,45,.07);
+  --display:"Unbounded","Onest",system-ui,sans-serif;
+  --body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1a1f; --surface:#16262c; --surface-2:#1c3038; --ink:#e6eef0; --muted:#93a8af; --line:#2a4049;
+  --accent:#4fc3cb; --accent-ink:#06262a; --gold:#f0b84a; --danger:#f08a7e;
+  --r4:#2a9461; --r3:#3f86bb; --r2:#8a7bb0; --r1:#a06c63;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0e1a1f; --surface:#16262c; --surface-2:#1c3038; --ink:#e6eef0; --muted:#93a8af; --line:#2a4049;
+  --accent:#4fc3cb; --accent-ink:#06262a; --gold:#f0b84a; --danger:#f08a7e;
+  --r4:#2a9461; --r3:#3f86bb; --r2:#8a7bb0; --r1:#a06c63;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3); color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:24px 56px;margin:0}
+.wrap{max-width:1240px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(24px,4.2vw,40px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.stats{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.stats b{display:block;font-size:20px;color:var(--ink)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-family:var(--display);font-size:15px;font-weight:500;margin:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 14px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span,.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.field input[type=search],.field input[type=text],.field select,.field input[type=number]{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+.field input[type=range]{width:100%;accent-color:var(--accent)}
+.field input[type=file]{font-size:13px;max-width:100%}
+.field.wide{grid-column:span 2}
+@media (max-width:420px){.field.wide{grid-column:auto}}
+.pair{display:flex;gap:6px;align-items:center}
+.check{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+.check input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chip span{display:block;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);font-size:13px}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.chip input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px}
+.bar.plain{border-top:0;padding-top:0}
+.bar .left,.bar .right{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+#count{font-weight:600}
+.btn{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:default}
+.sortbox{display:flex;align-items:center;gap:6px}
+.sortbox select{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;max-width:100%}
+.hint{font-size:13px;color:var(--muted);margin:0}
+#sync{font-size:12px;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;list-style:none;margin:0;padding:0}
+@media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;box-shadow:var(--shadow);position:relative;min-width:0;user-select:none;-webkit-user-select:none;transition:transform .12s}
+.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card.ghost{opacity:.3}
+.card.floating{position:fixed;z-index:50;pointer-events:none;transform:rotate(2deg) scale(1.03);box-shadow:0 14px 34px rgba(0,0,0,.35);margin:0}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+.cover{aspect-ratio:1/1;max-width:100%;position:relative;background:hsl(var(--h) 44% 32%);color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cover::before{content:"";position:absolute;inset:0;opacity:.2}
+.cover.g0::before{background:repeating-linear-gradient(45deg,#fff 0 2px,transparent 2px 14px)}
+.cover.g1::before{background:radial-gradient(#fff 2px,transparent 2.5px) 0 0/16px 16px}
+.cover.g2::before{background:repeating-linear-gradient(-45deg,#fff 0 6px,transparent 6px 22px)}
+.cover.g3::before{background:repeating-radial-gradient(circle at 50% 120%,#fff 0 2px,transparent 2px 16px)}
+.cover.g4::before{background:linear-gradient(#fff 1.5px,transparent 1.5px) 0 0/20px 20px,linear-gradient(90deg,#fff 1.5px,transparent 1.5px) 0 0/20px 20px}
+.cover.g5::before{background:conic-gradient(#fff 25%,transparent 0 50%,#fff 0 75%,transparent 0) 0 0/26px 26px;opacity:.12}
+.cover .ini{font-family:var(--display);font-weight:700;font-size:44px;letter-spacing:-.03em;position:relative;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:8px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
+.cover:has(img) .ini{visibility:hidden}
+.cover:has(img)::before{opacity:.1}
+.place{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.6);color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 7px;border-radius:6px;z-index:1}
+.grip{position:absolute;right:6px;top:6px;width:34px;height:34px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;border:0;display:grid;place-items:center;cursor:grab;touch-action:none;z-index:1}
+.grip svg{width:16px;height:16px;fill:currentColor}
+.nodrag .grip{display:none}
+.cbody{padding:10px 11px 11px;display:flex;flex-direction:column;gap:7px;flex:1;min-width:0}
+.cname{font-weight:700;font-size:14.5px;line-height:1.25;overflow-wrap:anywhere}
+.cmeta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.rate{font-family:var(--mono);font-weight:700;color:#fff;border-radius:6px;padding:3px 7px;font-size:13px;white-space:nowrap}
+.rate.t4{background:var(--r4)}.rate.t3{background:var(--r3)}.rate.t2{background:var(--r2)}.rate.t1{background:var(--r1)}.rate.t0{background:var(--muted)}
+.tag{font-size:11px;color:var(--muted)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px 16px;text-align:center;color:var(--muted)}
+
+dialog{border:1px solid var(--line);border-radius:16px;padding:0;background:var(--surface);color:var(--ink);width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(8,18,22,.6)}
+.m-cover{aspect-ratio:16/7;max-width:100%}
+.m-cover .ini{font-size:72px}
+.m-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:16px}
+.m-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.m-head h3,.m-body h3{font-family:var(--display);font-size:clamp(18px,3.4vw,24px);margin:0;line-height:1.2;text-wrap:balance;overflow-wrap:anywhere}
+.close{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:20px;cursor:pointer;z-index:2}
+dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 18px;margin:0}
+dl div{min-width:0;border-top:1px solid var(--line);padding-top:8px}
+dt{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+dd{margin:3px 0 0;font-weight:600;overflow-wrap:anywhere}
+dd small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.pips{display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px}
+.pips i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.pips i.on{background:var(--gold)}
+.ours{background:var(--surface-2);border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.ours input{width:74px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:var(--mono)}
+.ours .lbl{flex-basis:100%}
+.m-foot{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.m-foot a{color:var(--accent);font-weight:600}
+.m-foot .push{margin-left:auto}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.err{color:var(--danger);font-size:13px;margin:0;font-weight:600}
+.rlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rlist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+footer{color:var(--muted);font-size:13px;max-width:75ch}
+footer a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Ігротека Матвієнків</h1>
+      <p class="sub">Родинна колекція настільних ігор з рейтингами BoardGameGeek. Натисніть картку, щоб побачити подробиці, або перетягніть її, щоб скласти власний рейтинг.</p>
+    </div>
+    <div class="stats"><span id="stats" style="display:contents"></span><button class="btn primary" id="add" type="button">Додати гру</button></div>
+  </header>
+
+  <section class="panel" aria-labelledby="ph">
+    <h2 id="ph">Гра на вечір</h2>
+    <div class="fields">
+      <label class="field wide"><span>Назва</span><input type="search" id="q" placeholder="Наприклад, Root" autocomplete="off"></label>
+      <div class="field"><label class="lbl" for="fPlayers">Скільки гравців</label>
+        <select id="fPlayers"><option value="0">Будь-яка кількість</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option value="9">9 і більше</option></select>
+        <label class="check"><input type="checkbox" id="fBest"> лише найкращий склад за BGG</label></div>
+      <label class="field"><span>Скільки є часу</span>
+        <select id="fTime"><option value="0">Без обмежень</option><option value="20">до 20 хв</option><option value="30">до 30 хв</option><option value="45">до 45 хв</option><option value="60">до 1 год</option><option value="90">до 1,5 год</option><option value="120">до 2 год</option></select></label>
+      <label class="field"><span>Жанр</span><select id="fGenre"><option value="">Усі жанри</option></select></label>
+      <label class="field"><span>Вік наймолодшого гравця</span>
+        <select id="fAge"><option value="0">Будь-який</option><option value="6">6 років</option><option value="8">8 років</option><option value="10">10 років</option><option value="12">12 років</option><option value="14">14 років</option></select></label>
+      <label class="field"><span>Рейтинг BGG від <output id="rOut">будь-якого</output></span><input type="range" id="fRating" min="4" max="8" step="0.5" value="4"></label>
+      <div class="field wide"><span class="lbl">Складність</span>
+        <div class="chips" id="fDiff"></div></div>
+      <div class="field"><span class="lbl">Доповнення</span><label class="check"><input type="checkbox" id="fExp" checked> показувати доповнення</label></div>
+    </div>
+    <div class="bar">
+      <div class="left"><span id="count"></span>
+        <button class="btn primary" id="pick" type="button">Обрати випадкову</button>
+        <button class="btn" id="clear" type="button">Скинути фільтри</button></div>
+      <div class="right sortbox"><label class="lbl" for="sort">Порядок</label>
+        <select id="sort">
+          <option value="our">Наш рейтинг</option><option value="avg">Рейтинг BGG</option><option value="name">Назва</option>
+          <option value="year">Рік випуску</option><option value="w">Складність</option><option value="time">Тривалість</option><option value="p1">Кількість гравців</option>
+        </select>
+        <button class="btn small" id="dir" type="button" aria-label="Змінити напрям сортування">↓</button></div>
+    </div>
+    <div class="bar plain">
+      <p class="hint" id="dragHint"></p>
+      <div class="right"><span id="sync"></span>
+        <button class="btn small" id="removedBtn" type="button" hidden></button>
+        <button class="btn small" id="reset" type="button">Скинути наш рейтинг</button></div>
+    </div>
+  </section>
+
+  <ul class="grid" id="grid"></ul>
+  <div class="empty" id="empty" hidden>Жодна гра не підходить під ці умови. Спробуйте збільшити час або зняти обмеження складності.</div>
+
+  <footer>Рейтинг, складність, кількість гравців і тривалість узято з вашого експорту колекції BoardGameGeek. Зображення коробок завантажуються з серверів BoardGameGeek, тож для них потрібен інтернет; якщо зображення недоступне, картка показує умовну обкладинку, а власне фото можна додати у вікні гри. Дані для звірки: <a href="https://boardgamegeek.com/" target="_blank" rel="noopener">boardgamegeek.com</a>.</footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="mTitle">
+  <button class="close" id="mClose" type="button" aria-label="Закрити">×</button>
+  <div id="mContent"></div>
+</dialog>
+<input type="file" id="file" accept="image/*" hidden>
+
+<script>
+const BASE = [{"id":173346,"name":"7 Wonders Duel","year":2015,"avg":8.07,"geek":7.95,"rank":24,"w":2.23,"p0":2,"p1":2,"t0":30,"t1":30,"best":[2],"age":10,"exp":0,"ld":1,"au":"Antoine Bauza, Bruno Cathala","g":"Стратегічна","gd":"Карткова дуель, розбудова цивілізації","u":0,"n":1,"img":"https://cf.geekdo-images.com/zdagMskTF7wJBPjX74XsRw__itemrep/img/x5L93n_pSsxfFZ0Ir-JqtjLf-Jw=/fit-in/246x300/filters:strip_icc()/pic2576399.jpg"},{"id":285967,"name":"Ankh: Gods of Egypt","year":2021,"avg":7.72,"geek":7.26,"rank":258,"w":3.13,"p0":2,"p1":5,"t0":90,"t1":90,"best":[2,4],"age":12,"exp":0,"ld":3,"au":"Eric M. Lang","g":"Стратегічна","gd":"Контроль територій, міфологія","u":0,"n":1,"img":"https://cf.geekdo-images.com/_al0scMG_pQfGVM31Scf1Q__itemrep/img/E60DF99hzvTXPdT9hVuh9u6xXUI=/fit-in/246x300/filters:strip_icc()/pic6107853.jpg"},{"id":403160,"name":"Aridnyk","year":2024,"avg":8.25,"geek":5.65,"rank":7588,"w":2.38,"p0":1,"p1":4,"t0":40,"t1":60,"best":[2,3],"age":12,"exp":0,"ld":4,"au":"Yaroslav Kifor, Volodymyr Kuznietsov, Andrii Yanovskiy","g":"Сімейна","gd":"Пригодницька гра за мотивами карпатської міфології","u":0,"n":1,"img":"https://cf.geekdo-images.com/9z9YyDFj1HECltRfdHgKvg__itemrep/img/KaO8aJhEkKlG8beY_UuqrKX0tqU=/fit-in/246x300/filters:strip_icc()/pic8760198.jpg"},{"id":261831,"name":"Avocado Smash!","year":2018,"avg":6.06,"geek":5.57,"rank":11751,"w":1.31,"p0":2,"p1":99,"t0":10,"t1":10,"best":[4],"age":6,"exp":0,"ld":0,"au":"","g":"Вечіркова","gd":"Карткова гра на реакцію","u":1,"n":1,"img":""},{"id":363247,"name":"Azul: Master Chocolatier","year":2022,"avg":7.85,"geek":6.84,"rank":719,"w":1.78,"p0":2,"p1":4,"t0":30,"t1":45,"best":[2,3],"age":8,"exp":0,"ld":1,"au":"Michael Kiesling","g":"Абстрактна","gd":"Абстрактна, викладання плиток","u":0,"n":1,"img":""},{"id":2397,"name":"Backgammon","year":-3000,"avg":6.58,"geek":6.38,"rank":1661,"w":2.0,"p0":2,"p1":2,"t0":30,"t1":30,"best":[2],"age":8,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Давня гра-перегони з кубиками","u":0,"n":1,"img":"https://cf.geekdo-images.com/PournqDRZ4mb9yFpJvAc_Q__itemrep/img/YTBfS5FbJqEMcA91jqCXRXavUbY=/fit-in/246x300/filters:strip_icc()/pic9098768.jpg"},{"id":297985,"name":"Battle Line: Medieval","year":2017,"avg":7.6,"geek":6.48,"rank":1393,"w":1.82,"p0":2,"p1":2,"t0":30,"t1":30,"best":[2],"age":10,"exp":0,"ld":2,"au":"Reiner Knizia","g":"Стратегічна","gd":"Карткова дуель","u":0,"n":1,"img":""},{"id":170216,"name":"Blood Rage","year":2015,"avg":7.89,"geek":7.71,"rank":69,"w":2.88,"p0":2,"p1":4,"t0":60,"t1":90,"best":[4],"age":12,"exp":0,"ld":3,"au":"Eric M. Lang","g":"Стратегічна","gd":"Контроль територій, драфт карт","u":0,"n":1,"img":""},{"id":290236,"name":"Canvas","year":2021,"avg":7.19,"geek":6.92,"rank":607,"w":1.73,"p0":1,"p1":5,"t0":30,"t1":30,"best":[3,4],"age":8,"exp":0,"ld":2,"au":"Jeff Chin, Andrew Nerger","g":"Сімейна","gd":"Збирання наборів, прозорі карти","u":0,"n":1,"img":""},{"id":171131,"name":"Captain Sonar","year":2016,"avg":7.5,"geek":7.28,"rank":249,"w":2.21,"p0":2,"p1":8,"t0":45,"t1":60,"best":[8],"age":12,"exp":0,"ld":1,"au":"Roberto Fraga, Yohan Lemonnier","g":"Вечіркова","gd":"Командна гра в реальному часі","u":0,"n":1,"img":"https://cf.geekdo-images.com/Dpu5nFJu4UUJ4Y50WyKueg__itemrep/img/0qNokH1lcUP6H6Wyd5jXJsLy-Ko=/fit-in/246x300/filters:strip_icc()/pic7069368.jpg"},{"id":263918,"name":"Cartographers","year":2019,"avg":7.55,"geek":7.39,"rank":184,"w":1.89,"p0":1,"p1":100,"t0":30,"t1":45,"best":[3,4],"age":8,"exp":0,"ld":2,"au":"Jordy Adan","g":"Сімейна","gd":"Flip & write, малювання мап","u":0,"n":1,"img":""},{"id":295947,"name":"Cascadia","year":2021,"avg":7.88,"geek":7.73,"rank":61,"w":1.84,"p0":1,"p1":4,"t0":30,"t1":45,"best":[2,3],"age":8,"exp":0,"ld":2,"au":"Randy Flynn","g":"Сімейна","gd":"Викладання плиток, природа","u":0,"n":1,"img":"https://cf.geekdo-images.com/MjeJZfulbsM1DSV3DrGJYA__itemrep/img/RjD03wEf_LoX0EF4DhnW6f0xNHU=/fit-in/246x300/filters:strip_icc()/pic5100691.jpg"},{"id":171,"name":"Chess","year":1475,"avg":7.24,"geek":7.04,"rank":463,"w":3.64,"p0":2,"p1":2,"t0":0,"t1":0,"best":[2],"age":6,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Давня абстрактна стратегія","u":0,"n":1,"img":""},{"id":478,"name":"Citadels","year":2000,"avg":7.05,"geek":6.93,"rank":596,"w":2.05,"p0":2,"p1":8,"t0":20,"t1":60,"best":[5],"age":10,"exp":0,"ld":3,"au":"Bruno Faidutti","g":"Стратегічна","gd":"Карткова гра з прихованими ролями","u":0,"n":1,"img":"https://cf.geekdo-images.com/shXqRK7Sfsp-jCLwoN3kqw__itemrep/img/oH3tfcboUKXbBDhDEVShQ6_vxeY=/fit-in/246x300/filters:strip_icc()/pic636868.jpg"},{"id":178900,"name":"Codenames","year":2015,"avg":7.52,"geek":7.43,"rank":162,"w":1.25,"p0":2,"p1":8,"t0":15,"t1":15,"best":[6,8],"age":10,"exp":0,"ld":5,"au":"Vlaada Chvátil","g":"Вечіркова","gd":"Словесна командна гра","u":0,"n":1,"img":""},{"id":94683,"name":"Coronation","year":2010,"avg":5.96,"geek":5.51,"rank":23841,"w":1.75,"p0":2,"p1":6,"t0":40,"t1":40,"best":[6],"age":12,"exp":0,"ld":4,"au":"","g":"Стратегічна","gd":"Карткова гра","u":1,"n":1,"img":""},{"id":270956,"name":"The Court of Miracles","year":2019,"avg":6.92,"geek":5.89,"rank":3993,"w":2.06,"p0":2,"p1":5,"t0":40,"t1":40,"best":[4],"age":10,"exp":0,"ld":3,"au":"Vincent Brugeas, Guilhem Gautrand","g":"Стратегічна","gd":"Контроль територій, блеф","u":0,"n":1,"img":""},{"id":42777,"name":"Daldøs","year":0,"avg":5.93,"geek":0.0,"rank":0,"w":2.0,"p0":2,"p1":2,"t0":20,"t1":20,"best":[2],"age":0,"exp":0,"ld":0,"au":"Народна гра","g":"Класична","gd":"Давня скандинавська гра-перегони","u":0,"n":1,"img":"https://cf.geekdo-images.com/qrNvfOxGBeUsQdcA-M22KA__itemrep/img/sQ_w2Pxz6-Lt8ADDR61ISVLRu04=/fit-in/246x300/filters:strip_icc()/pic483869.jpg"},{"id":367379,"name":"Deal with the Devil","year":2022,"avg":7.04,"geek":6.05,"rank":2968,"w":3.72,"p0":4,"p1":4,"t0":120,"t1":150,"best":[4],"age":12,"exp":0,"ld":3,"au":"Matúš Kotry","g":"Стратегічна","gd":"Євро з прихованими ролями","u":0,"n":1,"img":""},{"id":225694,"name":"Decrypto","year":2018,"avg":7.76,"geek":7.55,"rank":116,"w":1.82,"p0":3,"p1":8,"t0":15,"t1":45,"best":[4,6],"age":10,"exp":0,"ld":5,"au":"Thomas Dagenais-Lespérance","g":"Вечіркова","gd":"Словесна командна гра, шифри","u":0,"n":1,"img":"https://cf.geekdo-images.com/hHZWXnUTMYDd_KTAM6Jwlw__itemrep/img/9Kx83YFeiA7DeSjMxyfmv6-cGC8=/fit-in/246x300/filters:strip_icc()/pic3759421.jpg"},{"id":15512,"name":"Diamant","year":2005,"avg":6.85,"geek":6.71,"rank":904,"w":1.11,"p0":3,"p1":8,"t0":20,"t1":40,"best":[6,7,8],"age":6,"exp":0,"ld":1,"au":"Bruno Faidutti, Alan R. Moon","g":"Сімейна","gd":"Випробуй удачу","u":0,"n":1,"img":"https://cf.geekdo-images.com/G7gR2mJRPosZmGahXFKFXA__itemrep/img/Y6M-uUvZT3YZr5HnYalwEZGDPCM=/fit-in/246x300/filters:strip_icc()/pic7924444.jpg"},{"id":194594,"name":"Dice Forge","year":2017,"avg":7.21,"geek":7.0,"rank":506,"w":1.97,"p0":2,"p1":4,"t0":45,"t1":45,"best":[4],"age":8,"exp":0,"ld":1,"au":"Régis Bonnessée","g":"Сімейна","gd":"Кубикова гра, покращення кубиків","u":0,"n":1,"img":"https://cf.geekdo-images.com/4BTVGQWO0M9ayxyku3FW6Q__itemrep/img/0hqPt1oo9J1GxmHqluUP-QC7xII=/fit-in/246x300/filters:strip_icc()/pic3477004.jpg"},{"id":370591,"name":"Dorfromantik: The Board Game","year":2022,"avg":7.58,"geek":7.18,"rank":332,"w":1.63,"p0":1,"p1":6,"t0":30,"t1":60,"best":[1,2],"age":6,"exp":0,"ld":2,"au":"Michael Palm, Lukas Zach","g":"Кооперативна","gd":"Кооперативне викладання плиток","u":0,"n":1,"img":""},{"id":357028,"name":"Dungeon Fighter: Second Edition","year":2021,"avg":7.34,"geek":6.3,"rank":1895,"w":1.75,"p0":1,"p1":6,"t0":45,"t1":60,"best":[3],"age":8,"exp":0,"ld":4,"au":"Aureliano Buonfino, Lorenzo Silva, Lorenzo Tucci Sorrentino","g":"Кооперативна","gd":"Кооперативна гра на спритність","u":0,"n":1,"img":""},{"id":305096,"name":"Endless Winter: Paleoamericans","year":2022,"avg":7.61,"geek":7.15,"rank":350,"w":3.32,"p0":1,"p1":4,"t0":60,"t1":120,"best":[3],"age":12,"exp":0,"ld":1,"au":"Stan Kordonskiy","g":"Стратегічна","gd":"Євро: колодобудування, виставлення робітників","u":0,"n":1,"img":"https://cf.geekdo-images.com/TFX_awTwbJxoG74GtRHytw__itemrep/img/AitBcvkqfNZWyrE-fp-rVKnrklA=/fit-in/246x300/filters:strip_icc()/pic5624523.jpg"},{"id":199792,"name":"Everdell","year":2018,"avg":7.97,"geek":7.8,"rank":46,"w":2.84,"p0":1,"p1":4,"t0":40,"t1":80,"best":[3],"age":10,"exp":0,"ld":4,"au":"James A. Wilson","g":"Стратегічна","gd":"Виставлення робітників, побудова таблиці","u":0,"n":1,"img":"https://cf.geekdo-images.com/fjE7V5LNq31yVEW_yuqI-Q__itemrep/img/nyVhVuXdmw-1sigbocTKG81UInM=/fit-in/246x300/filters:strip_icc()/pic3918905.png"},{"id":172225,"name":"Exploding Kittens","year":2015,"avg":6.07,"geek":5.89,"rank":4045,"w":1.08,"p0":2,"p1":5,"t0":15,"t1":15,"best":[4,5],"age":8,"exp":0,"ld":2,"au":"Elan Lee, Matthew Inman, Shane Small","g":"Вечіркова","gd":"Карткова гра на удачу","u":0,"n":1,"img":"https://cf.geekdo-images.com/N8bL53-pRU7zaXDTrEaYrw__itemrep/img/ON0bQporMQQ9KJlVC2UP8LAa_WI=/fit-in/246x300/filters:strip_icc()/pic2691976.png"},{"id":352574,"name":"Fit to Print","year":2023,"avg":7.3,"geek":6.63,"rank":1054,"w":2.12,"p0":1,"p1":6,"t0":15,"t1":30,"best":[4],"age":10,"exp":0,"ld":2,"au":"Peter McPherson","g":"Сімейна","gd":"Пазл у реальному часі","u":0,"n":1,"img":"https://cf.geekdo-images.com/MbLJUbvoRI_AS-KGfIkmNQ__itemrep/img/kCY5sBR4ImGHu8JJXUNsr1fjOuQ=/fit-in/246x300/filters:strip_icc()/pic7161032.jpg"},{"id":336986,"name":"Flamecraft","year":2022,"avg":7.36,"geek":7.08,"rank":409,"w":2.19,"p0":1,"p1":5,"t0":60,"t1":60,"best":[3],"age":8,"exp":0,"ld":3,"au":"Manny Vega","g":"Сімейна","gd":"Виставлення робітників, дракони","u":0,"n":1,"img":"https://cf.geekdo-images.com/EvGtnsBDcfnKiqSiXHothQ__itemrep/img/jX6vD-lydthyBuFRXuuWOnkayh0=/fit-in/246x300/filters:strip_icc()/pic6605448.jpg"},{"id":281194,"name":"Flick of Faith","year":2019,"avg":7.31,"geek":6.53,"rank":1260,"w":1.2,"p0":2,"p1":4,"t0":15,"t1":40,"best":[4],"age":6,"exp":0,"ld":2,"au":"Paweł Stobiecki, Jan Truchanowicz, Łukasz Włodarczyk","g":"Вечіркова","gd":"Гра на спритність, клацання фішок","u":0,"n":1,"img":""},{"id":136063,"name":"Forbidden Desert","year":2013,"avg":7.06,"geek":6.91,"rank":616,"w":2.04,"p0":2,"p1":5,"t0":45,"t1":45,"best":[4],"age":8,"exp":0,"ld":2,"au":"Matt Leacock","g":"Кооперативна","gd":"Кооперативна пригодницька","u":0,"n":1,"img":"https://cf.geekdo-images.com/OU26qQZoHJodxSFKiR5IzA__itemrep/img/dtguSaNPQjrAA3fbRJ_S5o8czAU=/fit-in/246x300/filters:strip_icc()/pic1528722.jpg"},{"id":188,"name":"Go","year":-2200,"avg":7.66,"geek":7.3,"rank":239,"w":3.92,"p0":2,"p1":2,"t0":30,"t1":180,"best":[2],"age":6,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Давня абстрактна стратегія","u":0,"n":1,"img":""},{"id":410291,"name":"Heat: Heavy Rain","year":2024,"avg":8.13,"geek":6.9,"rank":0,"w":2.38,"p0":1,"p1":7,"t0":60,"t1":60,"best":[5,6],"age":10,"exp":1,"ld":1,"au":"Asger Harding Granerud, Daniel Skjold Pedersen","g":"Сімейна","gd":"Доповнення до Heat, перегони","u":0,"n":1,"img":""},{"id":366013,"name":"Heat: Pedal to the Metal","year":2022,"avg":7.99,"geek":7.8,"rank":48,"w":2.2,"p0":1,"p1":6,"t0":30,"t1":60,"best":[5,6],"age":8,"exp":0,"ld":1,"au":"Asger Harding Granerud, Daniel Skjold Pedersen","g":"Сімейна","gd":"Перегони, керування рукою","u":0,"n":1,"img":"https://cf.geekdo-images.com/-vOrd4bOspibyohYExLqWg__itemrep/img/mSj0nZUY3ofhIXFZJLGzF-6MQTg=/fit-in/246x300/filters:strip_icc()/pic6940449.png"},{"id":182875,"name":"Hengist","year":2015,"avg":4.72,"geek":5.28,"rank":31342,"w":1.66,"p0":2,"p1":2,"t0":20,"t1":20,"best":[2],"age":8,"exp":0,"ld":1,"au":"Uwe Rosenberg","g":"Стратегічна","gd":"Дуельна гра","u":0,"n":1,"img":"https://cf.geekdo-images.com/mY6vS28jjXiAnvNa-0KJvw__itemrep/img/Dq7hsuLiOijuDoHv1_eIpStv2xk=/fit-in/246x300/filters:strip_icc()/pic2728136.jpg"},{"id":2655,"name":"Hive","year":2001,"avg":7.31,"geek":7.17,"rank":337,"w":2.31,"p0":2,"p1":2,"t0":20,"t1":20,"best":[2],"age":8,"exp":0,"ld":1,"au":"John Yianni","g":"Абстрактна","gd":"Абстрактна дуель","u":0,"n":1,"img":"https://cf.geekdo-images.com/fQe85tsBZoH6ibPnm1k1UA__itemrep/img/SdQ5at_SaQCPbs1QES2KfeUKqaQ=/fit-in/246x300/filters:strip_icc()/pic791151.jpg"},{"id":2932,"name":"Hnefatafl","year":400,"avg":6.67,"geek":5.99,"rank":3287,"w":2.5,"p0":2,"p1":2,"t0":20,"t1":20,"best":[2],"age":6,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Давня скандинавська абстрактна гра","u":0,"n":1,"img":"https://cf.geekdo-images.com/rIXE-wL-BnaMBQUwf_5VxQ__itemrep/img/RM_nCgC2sCLyu4QKtDPlqP1UBMA=/fit-in/246x300/filters:strip_icc()/pic1812568.jpg"},{"id":254640,"name":"Just One","year":2018,"avg":7.59,"geek":7.44,"rank":160,"w":1.03,"p0":3,"p1":7,"t0":20,"t1":60,"best":[6,7],"age":8,"exp":0,"ld":5,"au":"Ludovic Roudy, Bruno Sautter","g":"Вечіркова","gd":"Кооперативна словесна гра","u":0,"n":1,"img":"https://cf.geekdo-images.com/74haNunMBn85beBi-yIKwA__itemrep/img/JJ6JxH8LXK_y5YFwBxMq4UCGNfw=/fit-in/246x300/filters:strip_icc()/pic8669313.png"},{"id":331635,"name":"Kameloot","year":2021,"avg":6.69,"geek":5.7,"rank":6509,"w":1.31,"p0":3,"p1":6,"t0":20,"t1":25,"best":[4,5,6],"age":8,"exp":0,"ld":1,"au":"Cédric NH, Grégory Grard, Mathieu Roussel, Fred Boulle","g":"Сімейна","gd":"Карткова гра, збирання наборів","u":0,"n":1,"img":"https://cf.geekdo-images.com/kAAllrKaOmn4e5p0G7ZKpA__itemrep/img/DNxdRj_gxU_XrQ_TXu5ZtCNF8zU=/fit-in/246x300/filters:strip_icc()/pic5991084.png"},{"id":333255,"name":"Keep the Heroes Out!","year":2022,"avg":7.88,"geek":7.15,"rank":351,"w":2.49,"p0":1,"p1":4,"t0":40,"t1":40,"best":[2],"age":8,"exp":0,"ld":1,"au":"Luís Brüeh","g":"Кооперативна","gd":"Кооперативна оборона підземелля","u":0,"n":1,"img":"https://cf.geekdo-images.com/lfFKMNCzIJesp8IFHK8dEw__itemrep/img/AexjyTYA8UwsS6ZhBeZYDCe69Oc=/fit-in/246x300/filters:strip_icc()/pic6985339.jpg"},{"id":297562,"name":"Kemet: Blood and Sand","year":2021,"avg":7.89,"geek":7.19,"rank":314,"w":3.2,"p0":2,"p1":5,"t0":60,"t1":180,"best":[4],"age":10,"exp":0,"ld":1,"au":"Jacques Bariot, Guillaume Montiage","g":"Стратегічна","gd":"Контроль територій, бої","u":0,"n":1,"img":"https://cf.geekdo-images.com/IU-az-0jlIpoUxDHCCclNw__itemrep/img/hk01l3YMGIwS85fFnHjmaonYmnM=/fit-in/246x300/filters:strip_icc()/pic6230640.jpg"},{"id":204583,"name":"Kingdomino","year":2016,"avg":7.29,"geek":7.17,"rank":334,"w":1.24,"p0":2,"p1":4,"t0":15,"t1":25,"best":[2,4],"age":6,"exp":0,"ld":1,"au":"Bruno Cathala","g":"Сімейна","gd":"Викладання доміно, королівства","u":0,"n":1,"img":"https://cf.geekdo-images.com/c0m3gwZTcfKoLI63ASio8g__itemrep/img/HBQW09mf1nlYLGF4jmB9jfm4_EI=/fit-in/246x300/filters:strip_icc()/pic8443569.png"},{"id":2093,"name":"Mahjong","year":1850,"avg":7.07,"geek":6.65,"rank":1021,"w":2.58,"p0":3,"p1":4,"t0":120,"t1":120,"best":[4],"age":10,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Традиційна китайська гра з плитками","u":0,"n":1,"img":"https://cf.geekdo-images.com/R2R8UHcaRNJwaCJq8PJGFQ__itemrep/img/r1d2JuHmIBTxA936NKllvBHQYOo=/fit-in/246x300/filters:strip_icc()/pic43709.jpg"},{"id":1406,"name":"Monopoly","year":1935,"avg":4.37,"geek":4.29,"rank":31416,"w":1.62,"p0":2,"p1":8,"t0":60,"t1":180,"best":[4],"age":8,"exp":0,"ld":3,"au":"Charles Darrow, Elizabeth J. Magie","g":"Сімейна","gd":"Економічна, торгівля нерухомістю","u":0,"n":1,"img":""},{"id":1927,"name":"Munchkin","year":2001,"avg":5.87,"geek":5.69,"rank":6581,"w":1.82,"p0":3,"p1":6,"t0":60,"t1":120,"best":[4],"age":10,"exp":0,"ld":4,"au":"Steve Jackson","g":"Вечіркова","gd":"Гумористична карткова гра","u":0,"n":1,"img":""},{"id":13308,"name":"Niagara","year":2004,"avg":6.46,"geek":6.23,"rank":2155,"w":1.83,"p0":3,"p1":5,"t0":30,"t1":45,"best":[4,5],"age":8,"exp":0,"ld":1,"au":"Thomas Liesching","g":"Сімейна","gd":"Перегони, одночасний вибір дій","u":0,"n":1,"img":"https://cf.geekdo-images.com/IgYBUVpyseRNS8Pf9Ie6_A__itemrep/img/jvnMHUJK-Gl7cHpeF3Tmbw5RUAI=/fit-in/246x300/filters:strip_icc()/pic7572713.jpg"},{"id":301919,"name":"Pandemic: Hot Zone – North America","year":2020,"avg":6.96,"geek":6.23,"rank":2123,"w":1.87,"p0":2,"p1":4,"t0":30,"t1":30,"best":[2],"age":8,"exp":0,"ld":2,"au":"Matt Leacock, Chuck D. Yager","g":"Кооперативна","gd":"Кооперативна, боротьба з епідеміями","u":0,"n":1,"img":""},{"id":43530,"name":"Party Alias","year":2009,"avg":6.16,"geek":5.64,"rank":7854,"w":1.21,"p0":4,"p1":24,"t0":30,"t1":30,"best":[6,8,9,12],"age":12,"exp":0,"ld":5,"au":"Mikko Koivusalo","g":"Вечіркова","gd":"Пояснення слів","u":0,"n":1,"img":"https://cf.geekdo-images.com/15IJm-xtFo5DlVC0I_KEVQ__itemrep/img/BbdWt1RvzgJOhKNzQQ_ypnrqZVw=/fit-in/246x300/filters:strip_icc()/pic517373.jpg"},{"id":180974,"name":"Potion Explosion","year":2015,"avg":7.12,"geek":6.92,"rank":602,"w":1.78,"p0":2,"p1":4,"t0":30,"t1":45,"best":[3],"age":8,"exp":0,"ld":1,"au":"Lorenzo Silva, Andrea Crespi, Stefano Castelli","g":"Сімейна","gd":"Збирання наборів, кульки","u":0,"n":1,"img":"https://cf.geekdo-images.com/vwjYMFporFhvAU48k73MIw__itemrep/img/RnUXrb01rO0D_9Mg00BkNvJ6ows=/fit-in/246x300/filters:strip_icc()/pic7298696.jpg"},{"id":359962,"name":"Redwood","year":2023,"avg":7.17,"geek":5.99,"rank":3273,"w":2.15,"p0":1,"p1":4,"t0":45,"t1":60,"best":[3],"age":8,"exp":0,"ld":1,"au":"Christophe Raimbault","g":"Сімейна","gd":"Фотополювання, просторове планування","u":0,"n":1,"img":"https://cf.geekdo-images.com/QSc9LqKsOY15owVLRTwbFQ__itemrep/img/1t9Cu6f7TX05IPcNAWwuGbFeIv8=/fit-in/246x300/filters:strip_icc()/pic6958797.png"},{"id":128882,"name":"The Resistance: Avalon","year":2012,"avg":7.49,"geek":7.3,"rank":241,"w":1.74,"p0":5,"p1":10,"t0":30,"t1":30,"best":[7,8],"age":12,"exp":0,"ld":2,"au":"Don Eskridge","g":"Вечіркова","gd":"Приховані ролі, дедукція","u":0,"n":1,"img":"https://cf.geekdo-images.com/LPa6rsGcv8S0-OeNjCOAEQ__itemrep/img/KtGX_JFWNUXci7H5zs7GjS0QrQk=/fit-in/246x300/filters:strip_icc()/pic1398895.jpg"},{"id":205896,"name":"Rising Sun","year":2018,"avg":7.75,"geek":7.45,"rank":155,"w":3.3,"p0":3,"p1":5,"t0":90,"t1":120,"best":[4,5],"age":14,"exp":0,"ld":2,"au":"Eric M. Lang","g":"Стратегічна","gd":"Контроль територій, дипломатія","u":0,"n":1,"img":"https://cf.geekdo-images.com/iwevA6XmiNLHn1QnGUucqw__itemrep/img/QC2OAbicZssRpGJkUmp0Zbto-cs=/fit-in/246x300/filters:strip_icc()/pic3880340.jpg"},{"id":237182,"name":"Root","year":2018,"avg":8.07,"geek":7.88,"rank":34,"w":3.84,"p0":2,"p1":4,"t0":60,"t1":90,"best":[4],"age":12,"exp":0,"ld":4,"au":"Cole Wehrle","g":"Стратегічна","gd":"Асиметрична війна за ліс","u":0,"n":1,"img":"https://cf.geekdo-images.com/JUAUWaVUzeBgzirhZNmHHw__itemrep/img/sQgkl-_hydBVvQHAMLt2Zk_3dwI=/fit-in/246x300/filters:strip_icc()/pic4254509.jpg"},{"id":1602,"name":"The Royal Game of Ur","year":-2600,"avg":6.27,"geek":5.69,"rank":6693,"w":1.22,"p0":2,"p1":2,"t0":30,"t1":30,"best":[2],"age":6,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Давня гра-перегони з кубиками","u":0,"n":1,"img":"https://cf.geekdo-images.com/DkRLcDIjKsUIh3DimrZQmg__itemrep/img/8h5cdg6kYNCzUWtnKj16GS0q2RY=/fit-in/246x300/filters:strip_icc()/pic289784.jpg"},{"id":9220,"name":"Saboteur","year":2004,"avg":6.54,"geek":6.41,"rank":1575,"w":1.32,"p0":3,"p1":10,"t0":30,"t1":30,"best":[7,8],"age":8,"exp":0,"ld":1,"au":"Fréderic Moyersoen","g":"Вечіркова","gd":"Приховані ролі, прокладання тунелів","u":0,"n":1,"img":"https://cf.geekdo-images.com/oeN-MHAJKsC2KCI3avKj9w__itemrep/img/HR8TYZ1SYp5luArqPagg8_cTUJs=/fit-in/246x300/filters:strip_icc()/pic8679622.jpg"},{"id":91072,"name":"Saboteur 2 (expansion-only editions)","year":2011,"avg":6.93,"geek":6.45,"rank":0,"w":1.54,"p0":2,"p1":12,"t0":45,"t1":45,"best":[5,6,7,8],"age":8,"exp":1,"ld":1,"au":"Fréderic Moyersoen","g":"Вечіркова","gd":"Доповнення до Saboteur","u":0,"n":1,"img":"https://cf.geekdo-images.com/VsSFKeeTlPR2Ixn9pT7ktA__itemrep/img/VXrm4wT8i2wUy3HHGaAF4G2m_6k=/fit-in/246x300/filters:strip_icc()/pic4919882.png"},{"id":2399,"name":"Senet","year":-3500,"avg":5.83,"geek":5.57,"rank":11787,"w":1.43,"p0":2,"p1":2,"t0":30,"t1":30,"best":[2],"age":6,"exp":0,"ld":1,"au":"Народна гра","g":"Класична","gd":"Давньоєгипетська гра-перегони","u":0,"n":1,"img":"https://cf.geekdo-images.com/2gkFXJFYi6RAqkSSmrea5g__itemrep/img/qyAa1K5RDo08xg8fL2VOSdc2y2A=/fit-in/246x300/filters:strip_icc()/pic5722209.jpg"},{"id":246297,"name":"Shadows: Amsterdam","year":2018,"avg":6.57,"geek":5.99,"rank":3295,"w":1.29,"p0":2,"p1":8,"t0":20,"t1":20,"best":[6],"age":8,"exp":0,"ld":1,"au":"Mathieu Aubert","g":"Вечіркова","gd":"Командна гра на асоціації в реальному часі","u":0,"n":1,"img":"https://cf.geekdo-images.com/8Ng748hjEj51Ewz1dhMIrA__itemrep/img/0VH4nARD6mZHm-u8bi5oMeSziNw=/fit-in/246x300/filters:strip_icc()/pic4176830.jpg"},{"id":157969,"name":"Sheriff of Nottingham","year":2014,"avg":7.04,"geek":6.9,"rank":622,"w":1.66,"p0":3,"p1":5,"t0":60,"t1":60,"best":[5],"age":8,"exp":0,"ld":2,"au":"Sérgio Halaban, André Zatz","g":"Вечіркова","gd":"Блеф і перемовини","u":0,"n":1,"img":"https://cf.geekdo-images.com/BBgLFKUzr6tcKtlIM2JSFw__itemrep/img/SCFDFFn-bCPQS02dLi20c5ld_xI=/fit-in/246x300/filters:strip_icc()/pic2075830.jpg"},{"id":268620,"name":"Similo","year":2019,"avg":6.79,"geek":6.47,"rank":1419,"w":1.05,"p0":2,"p1":8,"t0":10,"t1":15,"best":[3,4],"age":6,"exp":0,"ld":1,"au":"Martino Chiacchiera, Hjalmar Hach, Pierluca Zizzi","g":"Кооперативна","gd":"Кооперативна дедукція на картах","u":0,"n":2,"img":""},{"id":40692,"name":"Small World","year":2009,"avg":7.19,"geek":7.08,"rank":412,"w":2.35,"p0":2,"p1":5,"t0":40,"t1":80,"best":[4],"age":8,"exp":0,"ld":1,"au":"Philippe Keyaerts","g":"Стратегічна","gd":"Контроль територій, фентезі","u":0,"n":1,"img":"https://cf.geekdo-images.com/aoPM07XzoceB-RydLh08zA__itemrep/img/vxZGxHhrtnOMxPM38WNIu-tfYmI=/fit-in/246x300/filters:strip_icc()/pic428828.jpg"},{"id":17557,"name":"Super Farmer","year":1943,"avg":5.72,"geek":5.55,"rank":12991,"w":1.15,"p0":2,"p1":6,"t0":20,"t1":20,"best":[4],"age":6,"exp":0,"ld":1,"au":"Karol Borsuk","g":"Сімейна","gd":"Дитяча гра з кубиками","u":0,"n":1,"img":"https://cf.geekdo-images.com/sl3RyQXqa39pcJyQdA0jyg__itemrep/img/-6KlWvCA6H0YUZTBPVZ3YPmeM1U=/fit-in/246x300/filters:strip_icc()/pic1802593.jpg"},{"id":425428,"name":"Survive The Island","year":2024,"avg":7.44,"geek":6.65,"rank":1012,"w":1.48,"p0":2,"p1":5,"t0":45,"t1":45,"best":[4],"age":8,"exp":0,"ld":2,"au":"Julian Courtland-Smith","g":"Сімейна","gd":"Виживання, «нашкодь сусідові»","u":0,"n":1,"img":"https://cf.geekdo-images.com/MG8gloAo6F2cD4C6gz12Lg__itemrep/img/9aXq1xUxJTrVBTYhtq8Lf9MkOYE=/fit-in/246x300/filters:strip_icc()/pic8337555.png"},{"id":342070,"name":"Thunder Road: Vendetta","year":2023,"avg":7.88,"geek":7.33,"rank":222,"w":1.95,"p0":2,"p1":4,"t0":45,"t1":75,"best":[4],"age":8,"exp":0,"ld":3,"au":"Dave Chalker, Brett Myers, Noah Cohen, Rob Daviau, Justin D. Jacobson, Jim Keifer, Brian Neff","g":"Сімейна","gd":"Перегони з боями","u":0,"n":1,"img":"https://cf.geekdo-images.com/l0bFsrGy_cfKRK6YW_dG-g__itemrep/img/NcbcVoGy6SM-zHqRmFOj1sVmKyk=/fit-in/246x300/filters:strip_icc()/pic8586892.png"},{"id":379290,"name":"Timeline Twist","year":2023,"avg":6.07,"geek":5.61,"rank":9302,"w":1.3,"p0":2,"p1":6,"t0":20,"t1":30,"best":[3],"age":10,"exp":0,"ld":2,"au":"Frédéric Henry, Corey Konieczka","g":"Кооперативна","gd":"Карткова гра про хронологію","u":0,"n":1,"img":"https://cf.geekdo-images.com/Sfr_DlsgJQxQl1NFPCbYjg__itemrep/img/AQsJ0XYDTSLHSmcYMcBhtVWdIZw=/fit-in/246x300/filters:strip_icc()/pic7388959.jpg"},{"id":242639,"name":"Treasure Island","year":2018,"avg":7.2,"geek":6.75,"rank":845,"w":2.2,"p0":2,"p1":5,"t0":45,"t1":45,"best":[4],"age":10,"exp":0,"ld":3,"au":"Marc Paquien","g":"Сімейна","gd":"Пошук скарбу, малювання на мапі","u":0,"n":1,"img":"https://cf.geekdo-images.com/tHEYd09coOFilcJZf3-I9A__itemrep/img/Pu_pnOy8cOFjOojKyABq0rmAQPU=/fit-in/246x300/filters:strip_icc()/pic6974459.jpg"},{"id":356123,"name":"Turing Machine","year":2022,"avg":7.59,"geek":7.18,"rank":325,"w":2.53,"p0":1,"p1":4,"t0":20,"t1":20,"best":[1],"age":12,"exp":0,"ld":2,"au":"Fabien Gridel, Yoann Levet","g":"Абстрактна","gd":"Логічна дедукція","u":0,"n":1,"img":"https://cf.geekdo-images.com/un5yundwtC6q1U9gWTY8Yw__itemrep/img/dmF4UID5Nz-j_7Pfd1rnQTukUD8=/fit-in/246x300/filters:strip_icc()/pic6883492.png"},{"id":335764,"name":"Unmatched: Battle of Legends, Volume Two","year":2021,"avg":8.19,"geek":7.04,"rank":473,"w":2.08,"p0":2,"p1":4,"t0":20,"t1":40,"best":[2,4],"age":10,"exp":0,"ld":3,"au":"Noah Cohen, Rob Daviau, Justin D. Jacobson, Chris Leder, Brian Neff, Kevin Rodgers","g":"Стратегічна","gd":"Дуельні бої на картах і мініатюрах","u":0,"n":1,"img":"https://cf.geekdo-images.com/_N9ueJu-Vaq656p7HSI9sw__itemrep/img/Di-u7PFWih1bAmdH3EtLX6ZtIkc=/fit-in/246x300/filters:strip_icc()/pic6267930.jpg"},{"id":192334,"name":"Vikings on Board","year":2016,"avg":6.16,"geek":5.67,"rank":7137,"w":2.12,"p0":2,"p1":4,"t0":30,"t1":60,"best":[3],"age":8,"exp":0,"ld":1,"au":"Charles Chevallier, Catherine Dumas, Pascal Pelemans","g":"Сімейна","gd":"Виставлення робітників, ставки","u":0,"n":1,"img":"https://cf.geekdo-images.com/L__E-r0-UraNl8839Mcpfg__itemrep/img/gUaqNlKBWvk2QyooozJ8UthSl9A=/fit-in/246x300/filters:strip_icc()/pic3013002.png"},{"id":262543,"name":"Wavelength","year":2019,"avg":7.18,"geek":6.97,"rank":541,"w":1.1,"p0":2,"p1":12,"t0":30,"t1":45,"best":[6,8],"age":10,"exp":0,"ld":3,"au":"Alex Hague, Justin Vickers, Wolfgang Warsch","g":"Вечіркова","gd":"Командна гра на асоціації","u":0,"n":1,"img":"https://cf.geekdo-images.com/z4fbPdmJg_5yphJEvql4ZA__itemrep/img/Dnjsh4DWMkiZBsPszNWs8bqtvGY=/fit-in/246x300/filters:strip_icc()/pic4552862.png"},{"id":233867,"name":"Welcome To...","year":2018,"avg":7.5,"geek":7.35,"rank":219,"w":1.84,"p0":1,"p1":100,"t0":25,"t1":25,"best":[3,4],"age":10,"exp":0,"ld":1,"au":"Benoit Turpin","g":"Сімейна","gd":"Flip & write, забудова містечка","u":0,"n":1,"img":"https://cf.geekdo-images.com/g4XmxyKhNVdhC3QPd1purQ__itemrep/img/QKJwfdV3Qrv9w2TX_ML5T3z5G9E=/fit-in/246x300/filters:strip_icc()/pic3761012.jpg"},{"id":4077,"name":"Who Wants to Be a Millionaire","year":2000,"avg":4.61,"geek":5.22,"rank":31361,"w":1.43,"p0":2,"p1":5,"t0":60,"t1":60,"best":[4,5],"age":14,"exp":0,"ld":5,"au":"","g":"Вечіркова","gd":"Вікторина","u":1,"n":1,"img":"https://cf.geekdo-images.com/Dntz7AlASS5Sq339DRE70A__itemrep/img/KIIDr7Ys8YkNPUbj1UO7flFiTPU=/fit-in/246x300/filters:strip_icc()/pic509196.jpg"},{"id":410201,"name":"Wyrmspan","year":2024,"avg":7.94,"geek":7.54,"rank":123,"w":2.83,"p0":1,"p1":5,"t0":90,"t1":90,"best":[3],"age":12,"exp":0,"ld":3,"au":"Connie Vogelmann","g":"Стратегічна","gd":"Побудова таблиці, дракони","u":0,"n":1,"img":"https://cf.geekdo-images.com/cNc-FMsYo-mcRTGaXV2qcQ__itemrep/img/YPrpU3fNa0_L_R_frKKXdPpU-EA=/fit-in/246x300/filters:strip_icc()/pic8894992.jpg"},{"id":41588,"name":"НЭП","year":1989,"avg":5.11,"geek":0.0,"rank":0,"w":2.0,"p0":2,"p1":6,"t0":180,"t1":180,"best":[4],"age":0,"exp":0,"ld":0,"au":"","g":"Сімейна","gd":"Економічна гра","u":1,"n":1,"img":"https://cf.geekdo-images.com/IPiEwZjrugX-4zOF4josPg__itemrep/img/1c_LZ2eIROHmkVD-ejBwkVMikc0=/fit-in/246x300/filters:strip_icc()/pic9769201.jpg"}];
+const GROUPS = ['Стратегічна','Сімейна','Вечіркова','Кооперативна','Абстрактна','Класична'];
+const DIFF = [['Легка',0,1.5],['Помірна',1.5,2.25],['Середня',2.25,3],['Складна',3,9]];
+const LANG = ['немає даних','текст у грі не потрібен','трохи тексту, легко запам’ятати','помірно тексту, знадобиться пам’ятка','багато тексту, потрібен переклад','без знання мови не зіграти'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = { get(k){ try { return localStorage.getItem(k) } catch(e){ return null } }, set(k,v){ try { localStorage.setItem(k,v); return true } catch(e){ return false } }, del(k){ try { localStorage.removeItem(k) } catch(e){} } };
+const readJSON = (k, d) => { try { const v = JSON.parse(store.get(k)); return v == null ? d : v } catch(e){ return d } };
+
+/* ---------- collection state: built-in list, minus removed, plus added ---------- */
+let removed = readJSON('removed', []), added = readJSON('added', []), rawOrder = readJSON('order', null);
+let GAMES = [], BY = new Map(), order = [];
+let sortDir = -1, dragging = null, justDragged = false, openId = null;
+const covers = new Map(), coverUrls = new Map();   // id -> data URL, id -> blob URL
+try { for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && k.startsWith('cover-')) covers.set(+k.slice(6), localStorage.getItem(k)) } } catch(e){}
+
+const diffOf = g => DIFF.findIndex(d => g.w >= d[1] && g.w < d[2]);
+const defaultOrder = () => [...GAMES].sort((a,b) => b.avg - a.avg).map(g => g.id);
+function cleanOrder(arr){
+  const seen = new Set(), out = [];
+  if (Array.isArray(arr)) for (const id of arr) if (BY.has(id) && !seen.has(id)) { seen.add(id); out.push(id) }
+  const rest = GAMES.filter(g => !seen.has(g.id));
+  for (const g of rest.filter(g => !g.custom).sort((a,b) => b.avg - a.avg)) out.push(g.id);
+  for (const g of rest.filter(g => g.custom)) out.push(g.id);
+  return out;
+}
+function rebuild(){
+  const gone = new Set(removed);
+  GAMES = BASE.filter(g => !gone.has(g.id)).concat(added.filter(g => g && g.id && g.name));
+  BY = new Map(GAMES.map(g => [g.id, g]));
+  order = cleanOrder(rawOrder);
+}
+
+/* ---------- formatting ---------- */
+const fmtYear = y => !y ? 'невідомо' : y < 0 ? `близько ${-y} р. до н. е.` : y < 1000 ? `близько ${y} р.` : String(y);
+const fmtPlayers = g => g.p0 === g.p1 ? `${g.p0}` : g.p1 >= 99 ? `${g.p0}+` : `${g.p0}–${g.p1}`;
+const fmtTime = g => !g.t1 && !g.t0 ? '—' : (g.t0 && g.t1 && g.t0 !== g.t1 ? `${g.t0}–${g.t1}` : `${g.t1 || g.t0}`) + ' хв';
+const tier = r => !r ? 0 : r >= 7.5 ? 4 : r >= 6.8 ? 3 : r >= 6 ? 2 : 1;
+const fmtRate = (r, n) => r ? r.toFixed(n) : '—';
+const hue = s => { let h = 0; for (const c of s) h = (h * 31 + c.codePointAt(0)) % 360; return h };
+function initials(n){
+  const w = n.replace(/^The /,'').split(/[\s:–\-!.,()]+/).filter(Boolean);
+  if (!w.length) return '?';
+  return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0,2)).toUpperCase();
+}
+function coverSrc(g){
+  const data = covers.get(g.id);
+  if (!data) return g.img || '';
+  if (!coverUrls.has(g.id)){
+    try { const [h, b] = data.split(','), bin = atob(b), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      coverUrls.set(g.id, URL.createObjectURL(new Blob([u8], { type: (h.match(/data:([^;]+)/) || [])[1] || 'image/jpeg' }))); }
+    catch(e){ coverUrls.set(g.id, data) }
+  }
+  return coverUrls.get(g.id);
+}
+function setCover(id, data){
+  const old = coverUrls.get(id); if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+  coverUrls.delete(id);
+  if (data) covers.set(id, data); else covers.delete(id);
+}
+function coverHTML(g, cls){
+  const src = coverSrc(g), gi = Math.max(0, GROUPS.indexOf(g.g));
+  return `<div class="cover g${gi} ${cls||''}" style="--h:${hue(g.name)}"><span class="ini" aria-hidden="true">${esc(initials(g.name))}</span>${src ? `<img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}`;
+}
+// a picture that fails to load (no internet, blocked host) gives way to the drawn cover
+document.addEventListener('error', e => { if (e.target && e.target.tagName === 'IMG' && e.target.closest('.cover')) e.target.remove() }, true);
+
+/* ---------- filters ---------- */
+function filters(){
+  return { q: $('q').value.trim().toLowerCase(), n: +$('fPlayers').value, best: $('fBest').checked, t: +$('fTime').value,
+    genre: $('fGenre').value, age: +$('fAge').value, r: +$('fRating').value,
+    diff: [...document.querySelectorAll('#fDiff input:checked')].map(i => +i.value), exp: $('fExp').checked };
+}
+function match(g, f){
+  if (f.q && !g.name.toLowerCase().includes(f.q)) return false;
+  if (!f.exp && g.exp) return false;
+  if (f.n){
+    if (f.n === 9 ? g.p1 < 9 : (f.n < g.p0 || f.n > g.p1)) return false;
+    if (f.best && !(f.n === 9 ? g.best.some(b => b >= 9) : g.best.includes(f.n))) return false;
+  }
+  if (f.t && (!(g.t1 || g.t0) || (g.t1 || g.t0) > f.t)) return false;
+  if (f.genre && g.g !== f.genre) return false;
+  if (f.age && g.age > f.age) return false;
+  if (f.r > 4 && g.avg < f.r) return false;
+  if (f.diff.length && !f.diff.includes(diffOf(g))) return false;
+  return true;
+}
+function visible(){
+  const f = filters(), s = $('sort').value;
+  let list = GAMES.filter(g => match(g, f));
+  if (s === 'our'){ const pos = new Map(order.map((id,i) => [id,i])); list.sort((a,b) => pos.get(a.id) - pos.get(b.id)); }
+  else if (s === 'name') list.sort((a,b) => a.name.localeCompare(b.name,'uk') * -sortDir);
+  else if (s === 'time') list.sort((a,b) => ((a.t1||a.t0) - (b.t1||b.t0)) * sortDir);
+  else list.sort((a,b) => (a[s] - b[s]) * sortDir || b.avg - a.avg);
+  return list;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const list = visible(), our = $('sort').value === 'our', pos = new Map(order.map((id,i) => [id,i+1]));
+  const grid = $('grid');
+  grid.classList.toggle('nodrag', !our);
+  grid.innerHTML = list.map(g => `<li class="card" data-id="${g.id}" tabindex="0" role="button" aria-label="${esc(g.name)}, рейтинг ${fmtRate(g.avg,1)}">
+    ${coverHTML(g)}<span class="place" title="Місце в нашому рейтингу">№ ${pos.get(g.id)}</span>
+    <button class="grip" type="button" tabindex="-1" aria-label="Перетягнути"><svg viewBox="0 0 16 16"><circle cx="5" cy="3" r="1.6"/><circle cx="11" cy="3" r="1.6"/><circle cx="5" cy="8" r="1.6"/><circle cx="11" cy="8" r="1.6"/><circle cx="5" cy="13" r="1.6"/><circle cx="11" cy="13" r="1.6"/></svg></button></div>
+    <div class="cbody"><div class="cname">${esc(g.name)}</div>${g.exp ? '<div class="tag">доповнення</div>' : ''}
+      <div class="cmeta"><span title="Гравці · тривалість">${fmtPlayers(g)} гр · ${fmtTime(g)}</span><span class="rate t${tier(g.avg)}" title="Рейтинг BGG">${fmtRate(g.avg,1)}</span></div></div></li>`).join('');
+  $('empty').hidden = list.length > 0;
+  $('count').textContent = `Знайдено ${list.length} з ${GAMES.length}`;
+  $('pick').disabled = !list.length;
+  $('dir').disabled = our;
+  $('dir').textContent = sortDir < 0 ? '↓' : '↑';
+  $('dragHint').textContent = our ? 'Перетягуйте картки мишею або за ручку у кутку картки. Номер показує місце гри у вашому рейтингу.' : 'Щоб перетягувати картки, оберіть порядок «Наш рейтинг».';
+  const base = GAMES.filter(g => !g.exp), rated = GAMES.filter(g => g.avg), avg = rated.reduce((s,g) => s + g.avg, 0) / (rated.length || 1);
+  $('stats').innerHTML = `<span><b>${base.length}</b>ігор</span><span><b>${GAMES.length - base.length}</b>доповнень</span><span><b>${avg.toFixed(2)}</b>середній рейтинг</span>`;
+  const nRem = BASE.filter(g => removed.includes(g.id)).length;
+  $('removedBtn').hidden = !nRem; $('removedBtn').textContent = `Видалені ігри (${nRem})`;
+}
+function refresh(){ rebuild(); render(); if (openId && BY.has(openId)) openGame(openId); else if (openId){ $('dlg').close() } }
+function setup(){
+  $('fGenre').insertAdjacentHTML('beforeend', GROUPS.map(g => `<option>${g}</option>`).join(''));
+  $('fDiff').innerHTML = DIFF.map((d,i) => `<label class="chip"><input type="checkbox" id="fDiff${i}" value="${i}"><span>${d[0]}</span></label>`).join('');
+  for (const id of ['q','fPlayers','fBest','fTime','fGenre','fAge','fExp','sort']) $(id).addEventListener('input', render);
+  $('fDiff').addEventListener('input', render);
+  $('fRating').addEventListener('input', () => { const v = +$('fRating').value; $('rOut').textContent = v > 4 ? v.toFixed(1) : 'будь-якого'; render() });
+  $('dir').addEventListener('click', () => { sortDir = -sortDir; render() });
+  $('clear').addEventListener('click', () => {
+    $('q').value = ''; $('fPlayers').value = '0'; $('fBest').checked = false; $('fTime').value = '0'; $('fGenre').value = ''; $('fAge').value = '0';
+    $('fRating').value = 4; $('rOut').textContent = 'будь-якого'; $('fExp').checked = true;
+    document.querySelectorAll('#fDiff input').forEach(i => i.checked = false); render();
+  });
+  $('pick').addEventListener('click', () => { const l = visible().filter(g => !g.exp); const p = l.length ? l : visible(); if (p.length) openGame(p[Math.floor(Math.random() * p.length)].id) });
+  twoStep($('reset'), 'Скинути наш рейтинг', 'Натисніть ще раз, щоб скинути', () => { rawOrder = null; rebuild(); order = defaultOrder(); saveOrder(); render() });
+  $('add').addEventListener('click', openAdd);
+  $('removedBtn').addEventListener('click', openRemoved);
+  const grid = $('grid');
+  grid.addEventListener('click', e => { if (justDragged) return; const c = e.target.closest('.card'); if (c && !e.target.closest('.grip')) openGame(+c.dataset.id) });
+  grid.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')){ e.preventDefault(); openGame(+e.target.dataset.id) } });
+  grid.addEventListener('pointerdown', onDown);
+  $('mClose').addEventListener('click', () => $('dlg').close());
+  $('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').close() });
+  $('dlg').addEventListener('close', () => { openId = null });
+  $('file').addEventListener('change', async e => {
+    const f = e.target.files[0], id = openId; if (!f || !id) return;
+    try { saveCover(id, await shrink(f)); render(); openGame(id); }
+    catch(err){ if ($('mNote')) $('mNote').textContent = 'Цей файл не вдалося прочитати як зображення. Оберіть JPG або PNG.' }
+  });
+  rebuild(); render();
+}
+// a button that asks for a second press instead of a confirm dialog
+function twoStep(btn, label, ask, run){
+  let armed = 0; btn.textContent = label;
+  btn.addEventListener('click', () => {
+    if (Date.now() - armed < 4000){ armed = 0; btn.textContent = label; run(); }
+    else { armed = Date.now(); btn.textContent = ask; setTimeout(() => { if (armed && btn.isConnected){ armed = 0; btn.textContent = label } }, 4000); }
+  });
+}
+
+/* ---------- drag to rank ---------- */
+function onDown(e){
+  if ($('sort').value !== 'our' || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const card = e.target.closest('.card'); if (!card) return;
+  const grip = e.target.closest('.grip');
+  if (e.pointerType !== 'mouse' && !grip) return;
+  const r = card.getBoundingClientRect();
+  dragging = { card, x0: e.clientX, y0: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, w: r.width, active: false, float: null, x: e.clientX, y: e.clientY, pid: e.pointerId };
+  e.preventDefault();
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
+}
+function onMove(e){
+  const d = dragging; if (!d || e.pointerId !== d.pid) return;
+  if (!d.active){
+    if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 8) return;
+    d.active = true;
+    d.float = d.card.cloneNode(true); d.float.classList.add('floating'); d.float.style.width = d.w + 'px';
+    document.body.appendChild(d.float); d.card.classList.add('ghost'); scrollLoop();
+  }
+  e.preventDefault();
+  d.float.style.left = (e.clientX - d.dx) + 'px'; d.float.style.top = (e.clientY - d.dy) + 'px';
+  d.x = e.clientX; d.y = e.clientY; swap();
+}
+function swap(){
+  const d = dragging; if (!d || !d.active) return;
+  const over = document.elementFromPoint(d.x, d.y)?.closest('#grid .card');
+  if (!over || over === d.card) return;
+  const after = d.card.compareDocumentPosition(over) & Node.DOCUMENT_POSITION_FOLLOWING;
+  over.parentNode.insertBefore(d.card, after ? over.nextSibling : over);
+}
+function scrollLoop(){
+  const d = dragging; if (!d || !d.active) return;
+  const m = 70, h = window.innerHeight;
+  if (d.y < m) window.scrollBy(0, -Math.ceil((m - d.y) / 5)); else if (d.y > h - m) window.scrollBy(0, Math.ceil((d.y - (h - m)) / 5));
+  swap(); requestAnimationFrame(scrollLoop);
+}
+function onUp(e){
+  const d = dragging; if (!d || e.pointerId !== d.pid) return;
+  window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp);
+  dragging = null;
+  if (!d.active) return;
+  d.float.remove(); d.card.classList.remove('ghost');
+  justDragged = true; setTimeout(() => justDragged = false, 50);
+  // write the new sequence of visible cards into the slots those cards held in the full ranking
+  const seq = [...$('grid').children].map(c => +c.dataset.id), set = new Set(seq); let i = 0;
+  const next = order.map(id => set.has(id) ? seq[i++] : id);
+  if (next.join() !== order.join()){ order = next; saveOrder(); }
+  render();
+}
+function moveTo(id, place){
+  const from = order.indexOf(id), to = Math.max(0, Math.min(order.length - 1, place - 1));
+  if (from < 0 || from === to) return;
+  order.splice(from, 1); order.splice(to, 0, id); saveOrder(); render(); if (openId === id) openGame(id);
+}
+
+/* ---------- saving: shared store when available, this device otherwise ---------- */
+let db = null, shared = false, pending = 0, chain = Promise.resolve();
+function setSync(){ $('sync').textContent = shared ? 'Зміни спільні для всіх, хто має доступ' : 'Зміни зберігаються на цьому пристрої' }
+function push(path, data){            // one write at a time, in order
+  if (!db) return;
+  pending++;
+  chain = chain.then(async () => {
+    try { const ref = db.doc(path); if (data === null) await ref.delete(); else await ref.set(data); shared = true; }
+    catch(e){ shared = false }
+    pending--; setSync();
+  });
+}
+function saveOrder(){ rawOrder = [...order]; store.set('order', JSON.stringify(order)); push('family/ranking', { order: [...order], updatedAt: Date.now() }) }
+function saveCollection(){
+  store.set('removed', JSON.stringify(removed)); store.set('added', JSON.stringify(added));
+  push('family/collection', { removed: [...removed], added: added.map(g => ({...g})), updatedAt: Date.now() });
+}
+function saveCover(id, data){
+  setCover(id, data);
+  if (data){ if (!store.set('cover-' + id, data) && !db) return false; push('covers/' + id, { img: data, updatedAt: Date.now() }); }
+  else { store.del('cover-' + id); push('covers/' + id, null); }
+  return true;
+}
+async function connect(){
+  setSync();
+  db = await window.claude?.use?.('db').catch(() => null);
+  if (!db) return;
+  const busy = () => dragging || pending > 0;
+  const fail = () => { shared = false; setSync() };
+  try {
+    db.doc('family/ranking').onSnapshot(snap => {
+      shared = true; setSync();
+      if (!snap.exists || snap.metadata.hasPendingWrites || busy()) return;
+      const o = snap.data().order; if (!Array.isArray(o) || o.join() === (rawOrder || []).join()) return;
+      rawOrder = [...o]; store.set('order', JSON.stringify(rawOrder)); refresh();
+    }, fail);
+    db.doc('family/collection').onSnapshot(snap => {
+      if (!snap.exists || snap.metadata.hasPendingWrites || busy()) return;
+      const d = snap.data(), r = Array.isArray(d.removed) ? d.removed : [], a = Array.isArray(d.added) ? d.added : [];
+      if (JSON.stringify([r,a]) === JSON.stringify([removed,added])) return;
+      removed = [...r]; added = a.map(g => ({...g, best: Array.isArray(g.best) ? [...g.best] : []}));
+      store.set('removed', JSON.stringify(removed)); store.set('added', JSON.stringify(added)); refresh();
+    }, fail);
+    db.collection('covers').onSnapshot(snap => {
+      if (busy()) return;
+      let changed = false; const seen = new Set();
+      for (const doc of snap.docs){ const id = +doc.id, img = doc.data().img; seen.add(id);
+        if (typeof img === 'string' && img.startsWith('data:image/') && covers.get(id) !== img){ setCover(id, img); store.set('cover-' + id, img); changed = true } }
+      if (!snap.metadata.fromCache) for (const id of [...covers.keys()]) if (!seen.has(id)){ setCover(id, null); store.del('cover-' + id); changed = true }
+      if (changed){ render(); if (openId && BY.has(openId)) openGame(openId) }
+    }, fail);
+  } catch(e){ fail() }
+}
+
+/* ---------- pictures ---------- */
+function shrink(file){
+  return new Promise((ok, no) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(1, 480 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * s)); c.height = Math.max(1, Math.round(img.height * s));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      ok(c.toDataURL('image/jpeg', .8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); no(new Error('image')) };
+    img.src = url;
+  });
+}
+
+/* ---------- details ---------- */
+function show(html){ $('mContent').innerHTML = html; if (!$('dlg').open) $('dlg').showModal(); $('dlg').scrollTop = 0 }
+function openGame(id){
+  const g = BY.get(id); if (!g) return;
+  const d = Math.max(0, diffOf(g)), place = order.indexOf(id) + 1, hasImg = covers.has(id);
+  const pips = [1,2,3,4,5].map(i => `<i class="${g.w >= i - .5 ? 'on' : ''}"></i>`).join('');
+  const best = g.best && g.best.length ? `найкраще на ${g.best.join(', ')}` : '';
+  show(`${coverHTML(g,'m-cover')}</div>
+  <div class="m-body">
+    <div class="m-head"><h3 id="mTitle">${esc(g.name)}</h3><span class="rate t${tier(g.avg)}" style="font-size:18px">${fmtRate(g.avg,2)}</span></div>
+    <dl>
+      <div><dt>Рік випуску</dt><dd>${fmtYear(g.year)}</dd></div>
+      <div><dt>Автори</dt><dd>${g.au ? esc(g.au) : 'не вказано'}${g.u && !g.custom ? '<small>потребує перевірки на BGG</small>' : ''}</dd></div>
+      <div><dt>Рейтинг BGG</dt><dd>${g.avg ? g.avg.toFixed(2) + ' з 10' : 'не вказано'}<small>${g.custom ? 'внесено вручну' : (g.geek ? 'Geek Rating ' + g.geek.toFixed(2) : 'Geek Rating ще не визначено') + (g.rank ? ' · місце ' + g.rank + ' у загальному заліку' : '')}</small></dd></div>
+      <div><dt>Кількість гравців</dt><dd>${fmtPlayers(g)}<small>${best}</small></dd></div>
+      <div><dt>Жанр</dt><dd>${esc(g.g)}${g.exp ? ' · доповнення' : ''}<small>${esc(g.gd || '')}</small></dd></div>
+      <div><dt>Рівень складності</dt><dd><span class="pips">${pips}</span>${DIFF[d][0]}<small>вага ${g.w.toFixed(2)} з 5${g.custom ? '' : ' за BGG'}</small></dd></div>
+      <div><dt>Тривалість партії</dt><dd>${fmtTime(g)}</dd></div>
+      <div><dt>Вік</dt><dd>${g.age ? g.age + '+' : 'не вказано'}${g.custom ? '' : `<small>Мова: ${LANG[g.ld]}</small>`}</dd></div>
+    </dl>
+    <div class="ours"><span class="lbl">Місце в нашому рейтингу</span>
+      <button class="btn small" id="mUp" type="button" ${place === 1 ? 'disabled' : ''}>Вище</button>
+      <button class="btn small" id="mDown" type="button" ${place === order.length ? 'disabled' : ''}>Нижче</button>
+      <label class="check" for="mPlace">№</label><input type="number" id="mPlace" min="1" max="${order.length}" value="${place}">
+      <button class="btn small" id="mSet" type="button">Поставити</button><span class="note">з ${order.length}</span></div>
+    <div class="m-foot">
+      <button class="btn small" id="mPhoto" type="button">${hasImg ? 'Замінити фото' : (g.img ? 'Замінити зображення своїм фото' : 'Додати фото коробки')}</button>
+      ${hasImg ? '<button class="btn small" id="mNoPhoto" type="button">Прибрати своє фото</button>' : ''}
+      ${g.custom ? '' : `<a href="https://boardgamegeek.com/boardgame/${g.id}" target="_blank" rel="noopener">Сторінка на BoardGameGeek ↗</a>`}
+      <button class="btn small danger push" id="mDel" type="button"></button>
+    </div>
+    <p class="note" id="mNote">${g.n > 1 ? `У колекції ${g.n} примірники цієї гри. ` : ''}${g.custom ? 'Цю гру додано вручну; після видалення її доведеться вносити заново.' : 'Видалену гру можна повернути кнопкою «Видалені ігри».'}</p>
+  </div>`);
+  openId = id;
+  $('mUp').onclick = () => moveTo(id, place - 1);
+  $('mDown').onclick = () => moveTo(id, place + 1);
+  $('mSet').onclick = () => moveTo(id, +$('mPlace').value || place);
+  $('mPlace').onkeydown = e => { if (e.key === 'Enter') $('mSet').click() };
+  $('mPhoto').onclick = () => { $('file').value = ''; $('file').click() };
+  if ($('mNoPhoto')) $('mNoPhoto').onclick = () => { saveCover(id, null); render(); openGame(id) };
+  twoStep($('mDel'), 'Видалити з колекції', 'Натисніть ще раз, щоб видалити', () => removeGame(id));
+}
+
+/* ---------- removing, restoring, adding ---------- */
+function removeGame(id){
+  const g = BY.get(id); if (!g) return;
+  if (g.custom){ added = added.filter(a => a.id !== id); if (covers.has(id)) saveCover(id, null); }
+  else if (!removed.includes(id)) removed.push(id);
+  order = order.filter(x => x !== id);
+  saveCollection(); saveOrder(); rebuild(); render(); $('dlg').close();
+}
+function restoreGame(id){
+  removed = removed.filter(x => x !== id);
+  saveCollection(); rebuild(); order = order.filter(x => x !== id).concat(id); saveOrder(); render();
+  if (BASE.some(g => removed.includes(g.id))) openRemoved(); else $('dlg').close();
+}
+function openRemoved(){
+  const list = BASE.filter(g => removed.includes(g.id));
+  openId = null;
+  show(`<div class="m-body"><h3 id="mTitle">Видалені ігри</h3>
+    <p class="note">Повернута гра стає в кінець вашого рейтингу.</p>
+    <ul class="rlist">${list.map(g => `<li><span>${esc(g.name)}</span><button class="btn small" type="button" data-restore="${g.id}">Повернути</button></li>`).join('')}</ul></div>`);
+  $('mContent').querySelectorAll('[data-restore]').forEach(b => b.onclick = () => restoreGame(+b.dataset.restore));
+}
+function openAdd(){
+  openId = null;
+  show(`<form class="m-body" id="addForm" novalidate>
+    <h3 id="mTitle">Нова гра</h3>
+    <div class="fields">
+      <label class="field wide"><span>Назва гри</span><input type="text" id="aName" maxlength="120" autocomplete="off" required></label>
+      <label class="field"><span>Рік випуску</span><input type="number" id="aYear" min="-4000" max="2100" step="1" placeholder="2024"></label>
+      <label class="field"><span>Рейтинг BGG, 1–10</span><input type="number" id="aAvg" min="1" max="10" step="0.01" placeholder="7.5"></label>
+      <label class="field wide"><span>Автори</span><input type="text" id="aAu" maxlength="200" autocomplete="off" placeholder="Імена через кому"></label>
+      <div class="field"><span class="lbl">Кількість гравців</span><div class="pair"><input type="number" id="aP0" min="1" max="100" value="2" aria-label="Гравців від"><span>–</span><input type="number" id="aP1" min="1" max="100" value="4" aria-label="Гравців до"></div></div>
+      <div class="field"><span class="lbl">Тривалість, хв</span><div class="pair"><input type="number" id="aT0" min="0" max="999" placeholder="30" aria-label="Хвилин від"><span>–</span><input type="number" id="aT1" min="0" max="999" placeholder="60" aria-label="Хвилин до"></div></div>
+      <label class="field"><span>Жанр</span><select id="aG">${GROUPS.map(g => `<option>${g}</option>`).join('')}</select></label>
+      <label class="field"><span>Уточнення жанру</span><input type="text" id="aGd" maxlength="120" autocomplete="off" placeholder="Наприклад, карткова дуель"></label>
+      <label class="field"><span>Складність, вага 1–5</span><input type="number" id="aW" min="1" max="5" step="0.01" value="2"></label>
+      <label class="field"><span>Вік від, років</span><input type="number" id="aAge" min="0" max="21" placeholder="8"></label>
+      <label class="field wide"><span>Зображення коробки</span><input type="file" id="aImg" accept="image/*"></label>
+      <div class="field"><span class="lbl">Тип</span><label class="check"><input type="checkbox" id="aExp"> це доповнення</label></div>
+    </div>
+    <p class="err" id="aErr" hidden></p>
+    <div class="m-foot"><button class="btn primary" type="submit">Додати до колекції</button><button class="btn" type="button" id="aCancel">Скасувати</button></div>
+  </form>`);
+  $('aCancel').onclick = () => $('dlg').close();
+  $('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const num = (id, d) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : d };
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const err = t => { $('aErr').textContent = t; $('aErr').hidden = false };
+    const name = $('aName').value.trim();
+    if (!name){ err('Вкажіть назву гри.'); $('aName').focus(); return }
+    if (GAMES.some(g => g.name.toLowerCase() === name.toLowerCase())){ err('Гра з такою назвою вже є в колекції.'); $('aName').focus(); return }
+    let p0 = clamp(Math.round(num('aP0', 1)), 1, 100), p1 = clamp(Math.round(num('aP1', p0)), 1, 100); if (p1 < p0) [p0, p1] = [p1, p0];
+    let t0 = clamp(Math.round(num('aT0', 0)), 0, 999), t1 = clamp(Math.round(num('aT1', 0)), 0, 999); if (t1 && t0 > t1) [t0, t1] = [t1, t0]; if (!t1) t1 = t0;
+    const avgIn = num('aAvg', 0);
+    if (avgIn && (avgIn < 1 || avgIn > 10)){ err('Рейтинг має бути від 1 до 10. Залиште поле порожнім, якщо рейтингу немає.'); $('aAvg').focus(); return }
+    const g = { id: Date.now(), custom: 1, name, year: Math.round(num('aYear', 0)), avg: Math.round(avgIn * 100) / 100, geek: 0, rank: 0,
+      w: clamp(num('aW', 2), 1, 5), p0, p1, t0, t1, best: [], age: clamp(Math.round(num('aAge', 0)), 0, 21), exp: $('aExp').checked ? 1 : 0, ld: 0,
+      au: $('aAu').value.trim(), g: $('aG').value, gd: $('aGd').value.trim(), u: 0, n: 1 };
+    const f = $('aImg').files[0]; let data = null;
+    if (f){ try { data = await shrink(f) } catch(x){ err('Файл зображення не вдалося прочитати. Оберіть JPG або PNG або додайте гру без зображення.'); return } }
+    added.push(g); rebuild(); saveCollection(); saveOrder();
+    if (data) saveCover(g.id, data);
+    render(); openGame(g.id);
+  });
+  $('aName').focus();
+}
+setup(); connect();
+</script>
+</body></html>
